@@ -79,6 +79,11 @@
             <artifactId>codegen-gapp</artifactId>
             <version>1.0.0</version>
         </dependency>
+         <dependency>
+            <groupId>de.gaalop</groupId>
+            <artifactId>codegen-gapp-intrinsics</artifactId>
+            <version>1.0.0</version>
+        </dependency>
         <dependency>
             <groupId>de.gaalop</groupId>
             <artifactId>codegen-gappopencl</artifactId>

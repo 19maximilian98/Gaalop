@@ -33,6 +33,7 @@
         <module>codegen-java</module>
         <module>codegen-dot</module>
         <module>codegen-gapp</module>
+        <module>codegen-gapp-intrinsics</module>
         <module>codegen-gappopencl</module>
         <module>codegen-compressed</module>
         <module>codegen-verilog</module>
@@ -67,6 +68,7 @@
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-compiler-plugin</artifactId>
+                    <version>3.3</version>
                     <configuration>
                         <source>1.7</source>
                         <target>1.7</target>

@@ -12,14 +12,14 @@ import java.util.Observable;
 public class Plugin extends Observable implements GlobalSettingsStrategyPlugin {
     
     @ConfigurationProperty(type=Type.FILEPATH)
-    public String maximaCommand = "C:\\Program Files (x86)\\Maxima\\bin\\maxima.bat";
+    public String maximaCommand = "/usr/bin/maxima";
     
     /*
      * Please make sure this is disabled by default.
      * Some tests fail otherwise.
      */
     @ConfigurationProperty(type=Type.BOOLEAN)
-    public boolean optMaxima = false;
+    public boolean optMaxima = true;
     
     @ConfigurationProperty(type=Type.NUMBER)
     public int editorFontSize = 12;
