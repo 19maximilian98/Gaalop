@@ -295,11 +295,11 @@ public class IntrinsicsVisitor extends de.gaalop.gapp.visitor.CFGGAPPVisitor {
         result.append(gappResetMv.getSize());
         result.append("];\n");
 
-      /*
+
        if (gappResetMv.getDestination().getName().contains("tempmv")){
            result.append("double " + gappResetMv.getDestination().getName() + "[" + gappResetMv.getSize() + "];\n");
        }
-       */
+
         return null;
     }
 
