@@ -1,4 +1,4 @@
-package de.gaalop.codegenGappIntrinsics;
+package de.gaalop.codegenGappIntrinsics.sse;
 
 import de.gaalop.cfg.AssignmentNode;
 import de.gaalop.cfg.EndNode;
@@ -11,12 +11,14 @@ import de.gaalop.gapp.variables.GAPPVector;
 
 import java.util.*;
 
-public class GAPPIntrinsicsVisitor extends de.gaalop.gapp.visitor.CFGGAPPVisitor {
+public class IntrinsicsVisitor extends de.gaalop.gapp.visitor.CFGGAPPVisitor {
 
 
 
     private StringBuilder result;
     private StringBuilder variables;
+
+    private ArrayList<VectorIntrinsics> vectors;
 
     private Map<String, Integer> vectorsSizeMap;
 
@@ -30,10 +32,11 @@ public class GAPPIntrinsicsVisitor extends de.gaalop.gapp.visitor.CFGGAPPVisitor
     String preZero = "Zero";
     String nextNextLine = "\n    ";
 
-    public GAPPIntrinsicsVisitor(){
+    public IntrinsicsVisitor(){
         result = new StringBuilder();
         variables = new StringBuilder();
         vectorsSizeMap = new HashMap<>();
+        vectors = new ArrayList<>();
     }
 
     public String getResultString(){
@@ -60,7 +63,7 @@ public class GAPPIntrinsicsVisitor extends de.gaalop.gapp.visitor.CFGGAPPVisitor
     @Override
     public void visit(StartNode node){
 
-        result.append("#include <riscv_vector.h>\n" +
+        result.append("#include <immintrin.h>\n" +
                 "#include <stddef.h>\n" +
                 "#include <stdio.h>\n" +
                 "#include <math.h>\n\n");
@@ -71,12 +74,12 @@ public class GAPPIntrinsicsVisitor extends de.gaalop.gapp.visitor.CFGGAPPVisitor
        // result.append("const double *inputsVector, ");
         List<Variable> inputVariables = sortVariables(node.getGraph().getInputVariables());
         for (Variable cur : inputVariables){
-            result.append("double ");
+            result.append("float ");
             result.append(cur.getName());
             result.append(", ");
         }
         for (Variable var : localVariables) {
-            result.append("double").append(" ");
+            result.append("float").append(" ");
             result.append(var.getName());
             result.append("["+bladeCount+"], ");
         }
@@ -86,7 +89,7 @@ public class GAPPIntrinsicsVisitor extends de.gaalop.gapp.visitor.CFGGAPPVisitor
         }
 
         result.append(") {\n");
-        result.append("double inputsVector[" + inputVariables.size() + "] = {");
+        result.append("float inputsVector[" + inputVariables.size() + "] = {");
         for (Variable cur : inputVariables) {
             result.append(cur.getName());
             result.append(",  ");
@@ -94,9 +97,9 @@ public class GAPPIntrinsicsVisitor extends de.gaalop.gapp.visitor.CFGGAPPVisitor
         result.deleteCharAt(result.length() - 1);
         result.deleteCharAt(result.length() - 1);
         result.append("};\n");
-        result.append(
+       /* result.append(
                 "double zero[1] = {0};\n" +
-                "vfloat64m1_t vZero = vle64_v_f64m1(zero, 1);\n");
+                "vfloat64m1_t vZero = vle64_v_f64m1(zero, 1);\n");*/
         node.getSuccessor().accept(this);
     }
 
@@ -223,72 +226,64 @@ public class GAPPIntrinsicsVisitor extends de.gaalop.gapp.visitor.CFGGAPPVisitor
         //printDotProduct(gappDotVectors.getParts());
         result.append(";\n");
 
+        result.append("{\n");
 
+        int vectorSize = getVectorByName(gappDotVectors.getParts().get(0).getName()).getSize();
+        ArrayList<String> regs = new ArrayList<>();
+        for (int i = 0; i<vectorSize; i+=4){
+            regs.add("_" + i/4);
+        }
+        result.append("__m128 ");
+        for (String i: regs){
+            result.append("v0" + i +",v1"+i+",");
+        }
+        result.deleteCharAt(result.length()-1);
+        result.append(";\n");
 
-        result.append("{");
-        result.append(nextLine);
-        result.append("double *");
-        result.append(prePointer + preDotProd);
-        result.append(" = &");
-        result.append(gappDotVectors.getDestination().getName());
-        result.append("[");
-        result.append(gappDotVectors.getDestSelector().getIndex());
-        result.append("]");
-        result.append(";");
-        result.append(nextLine);
+        for (int i = 0; i<vectorSize; i+=4){
+            VectorIntrinsics v0 = getVectorByName(gappDotVectors.getParts().get(0).getName());
+            result.append("v0"+ regs.get(i/4) + " = _mm_set_ps(" + v0.getElement(i+3) + ", " + v0.getElement(i+2) + ", " + v0.getElement(i+1) + ", " + v0.getElement(i) + ");\n");
+            //gappDotVectors.getParts().remove(0);
+            for (int i2 =1;i2<gappDotVectors.getParts().size();i2++) {
 
-
-
-        result.append("size_t " + preN + " = ");
-
-        int dotSize = vectors.size();
-        int vectorSize = 0;
-        for (Map.Entry<String, Integer> entry : vectorsSizeMap.entrySet()) {
-            if (entry.getKey().equals(vectors.get(0).getName())) {
-                vectorSize = entry.getValue();
+                    VectorIntrinsics v1 = getVectorByName(gappDotVectors.getParts().get(i2).getName());
+                    result.append("v1" + regs.get(i / 4) + "= _mm_set_ps(" + v1.getElement(i + 3) + ", " + v1.getElement(i + 2) + ", " + v1.getElement(i + 1) + ", " + v1.getElement(i) + ");\n");
+                    result.append("v0" + regs.get(i / 4) + " = _mm_mul_ps(v0" + regs.get(i / 4) + ", v1" + regs.get(i / 4) + ");\n");
             }
         }
-        result.append(vectorSize);
-        result.append(";");
-        result.append(nextLine);
-        result.append("size_t " + preVL + ";");
-        result.append(nextLine);
-        result.append("vfloat64m1_t " + preVector +"0, " + preVector + "1, "+ preVector + "r;");
-        result.append(nextLine);
+        while (regs.size()>1) {
+            for (int i = 0; ; i++) {
 
-
-        result.append("for (; " + preN + " > 0; " + preN + " -= " + preVL + ") {");
-        result.append(nextNextLine);
-        result.append(preVL + " = vsetvl_e64m1(" + preN + ");");
-        result.append(nextNextLine);
-        result.append( preVector + "0 = vle64_v_f64m1(" + prePointer + vectors.get(0).getName() + ", l);");
-        result.append(nextNextLine);
-        result.append(prePointer + vectors.get(0).getName() + "+= l;");
-        result.append(nextNextLine);
-        for (int i = 1; i < dotSize; i++){
-            result.append(preVector +  "1 = vle64_v_f64m1(" + prePointer + vectors.get(i).getName() + ", l);");
-            result.append(nextNextLine);
-            result.append(prePointer + vectors.get(i).getName() + "+= l;");
-            result.append(nextNextLine);
-            result.append(preVector + "0 = vfmul_vv_f64m1(" + preVector + "0, " + preVector + "1, l);");
-            result.append(nextNextLine);
+                if (i >= regs.size() - 1) {
+                    break;
+                }
+                result.append("v0" + regs.get(i) + "=_mm_add_ps(v0" + regs.get(i) + ",v0" + regs.get(regs.size() - 1)+");\n");
+                regs.remove(regs.size() - 1);
+                break;
+            }
         }
-        result.append(preVector + preDotProd + " = vfredosum_vs_f64m1_f64m1 (" + preVector + preDotProd + ", " + preVector + "0, " + preVector + preZero + ", l);");
-        result.append(nextNextLine);
 
-        result.append("}");
-        result.append(nextLine);
+        if (vectorSize==1){
+            result.append(gappDotVectors.getDestination().getName() + "[" + gappDotVectors.getDestSelector().getIndex() + "] = _mm_cvtss_f32(v0_0);\n");
+        } else
+        if (vectorSize==2){
+            result.append("v0_0 = _mm_add_ss( v0_0, _mm_movehdup_ps( v0_0 ) );\n");
+            result.append(gappDotVectors.getDestination().getName() + "[" + gappDotVectors.getDestSelector().getIndex() + "] = _mm_cvtss_f32(v0_0);\n");
+        } else {
+            result.append("v0_0 = _mm_add_ps( v0_0, _mm_movehl_ps( v0_0, v0_0 ) );\n");
+            result.append("v0_0 = _mm_add_ss( v0_0, _mm_movehdup_ps( v0_0 ) );\n");
+            result.append(gappDotVectors.getDestination().getName() + "[" + gappDotVectors.getDestSelector().getIndex() + "] = _mm_cvtss_f32(v0_0);\n");
+        }
 
-
-
-        //result.append("vse64_v_f64m1 ("+ gappDotVectors.getDestination().getName() + "[" + gappDotVectors.getDestSelector().getIndex() + "]" + ", " + preVector + preDotProd + ", 1);");
-
-        result.append("vse64_v_f64m1 ("+ prePointer + preDotProd + ", " + preVector + preDotProd + ", 1);");
-        result.append(nextLine);
+        //result.append(";\n");
         result.append("}\n");
+        return null;
+    }
 
-
-
+    VectorIntrinsics getVectorByName(String name){
+        for (VectorIntrinsics i : this.vectors)
+            if (i.name.equals(name))
+                return i;
         return null;
     }
 
@@ -300,35 +295,11 @@ public class GAPPIntrinsicsVisitor extends de.gaalop.gapp.visitor.CFGGAPPVisitor
         result.append(gappResetMv.getSize());
         result.append("];\n");
 
+      /*
        if (gappResetMv.getDestination().getName().contains("tempmv")){
            result.append("double " + gappResetMv.getDestination().getName() + "[" + gappResetMv.getSize() + "];\n");
        }
-
-
-        result.append("{");
-        result.append(nextLine);
-        result.append("size_t " + preN + " = ");
-        result.append(gappResetMv.getSize());
-        result.append(";");
-        result.append(nextLine);
-        result.append("size_t " + preVL + ";");
-        result.append(nextLine);
-        result.append("double *" + prePointer + "0 = " + gappResetMv.getDestination().getName() + ";");
-        result.append(nextLine);
-        result.append("vfloat64m1_t " + preVector + "0;");
-        result.append(nextLine);
-        result.append("for (; " + preN + " > 0; " + preN + " -= " + preVL + ") {");
-        result.append(nextNextLine);
-        result.append(preVL + " = vsetvl_e64m1(" + preN + ");");
-        result.append(nextNextLine);
-        result.append(preVector + "0 = " + "vfmv_v_f_f64m1(0," + preVL + ");");
-        result.append(nextNextLine);
-        result.append("vse64_v_f64m1 ("+ prePointer + "0, " + preVector + "0, " + preVL + ");");
-        result.append(nextNextLine);
-        result.append(prePointer + "0 += l;");
-        result.append(nextLine);
-        result.append("}\n");
-        result.append("}\n");
+       */
         return null;
     }
 
@@ -390,47 +361,31 @@ public class GAPPIntrinsicsVisitor extends de.gaalop.gapp.visitor.CFGGAPPVisitor
 
         result.append(";\n");
 
-        result.append("double ");
-        result.append(gappSetVector.getDestination().getName());
-        StringBuilder localResult = new StringBuilder();
-        Integer vectorSize = 0;
-
+        VectorIntrinsics temp = new VectorIntrinsics(gappSetVector.getDestination().getName());
+        vectors.add(temp);
+        ArrayList<String> elements = temp.getElements();
         for (SetVectorArgument cur : gappSetVector.getEntries()){
             if (cur.isConstant()) {
-                localResult.append(((ConstantSetVectorArgument) cur).getValue());
-                vectorSize++;
-                localResult.append(",");
+                elements.add(String.valueOf( ((ConstantSetVectorArgument) cur).getValue()));
             } else {
                 PairSetOfVariablesAndIndices pair = (PairSetOfVariablesAndIndices) cur;
                 String name = pair.getSetOfVariable().getName();
                 Selectorset selectorset = pair.getSelectors();
+
                 for (Selector selector : selectorset){
-                    vectorSize++;
+                    String element = "";
                     if (selector.getSign() == (byte) -1) {
-                        localResult.append('-');
+                        element += "-";
                     }
-                    localResult.append(name);
-                    localResult.append("[");
-                    localResult.append(selector.getIndex());
-                    localResult.append("],");
+                    element+=name;
+                    element+="[";
+                    element+=selector.getIndex();
+                    element+="]";
+                    elements.add(element);
                 }
             }
             //localResult.append(",");
         }
-        localResult.deleteCharAt(localResult.length() - 1);
-        vectorsSizeMap.put(gappSetVector.getDestination().getName(), vectorSize);
-        result.append("[");
-        result.append(vectorSize);
-        result.append("] = {");
-        result.append(localResult);
-        result.append("}");
-        result.append(";\n");
-
-        result.append("const double *p" );
-        result.append(gappSetVector.getDestination().getName());
-        result.append(" = ");
-        result.append(gappSetVector.getDestination().getName());
-        result.append(";\n");
         return null;
     }
 

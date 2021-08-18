@@ -1,0 +1,34 @@
+//DotProduct[0] = (((-(inputsVector[7])) + (inputsVector[2] * inputsVector[6])) + (inputsVector[1] * inputsVector[5])) + (inputsVector[0] * inputsVector[4])
+assignInputsVector inputsVector = [a1,a2,a3,a4,m1,m2,m3,m4];
+resetMv DotProduct[32];
+setVector ve0 = {inputsVector[-7,2,1,0]};
+setVector ve1 = {1.0,inputsVector[6,5,4]};
+dotVectors DotProduct[0] = <ve0,ve1>;
+
+//a_Refl[1] = inputsVector[0] - ((2.0 * DotProduct[0]) * inputsVector[4])
+resetMv a_Refl[32];
+setVector ve2 = {inputsVector[0],-2.0};
+setVector ve3 = {1.0,DotProduct[0]};
+setVector ve4 = {1.0,inputsVector[4]};
+dotVectors a_Refl[1] = <ve2,ve3,ve4>;
+
+//a_Refl[2] = inputsVector[1] - ((2.0 * DotProduct[0]) * inputsVector[5])
+setVector ve5 = {inputsVector[1],-2.0};
+setVector ve6 = {1.0,DotProduct[0]};
+setVector ve7 = {1.0,inputsVector[5]};
+dotVectors a_Refl[2] = <ve5,ve6,ve7>;
+
+//a_Refl[3] = inputsVector[2] - ((2.0 * DotProduct[0]) * inputsVector[6])
+setVector ve8 = {inputsVector[2],-2.0};
+setVector ve9 = {1.0,DotProduct[0]};
+setVector ve10 = {1.0,inputsVector[6]};
+dotVectors a_Refl[3] = <ve8,ve9,ve10>;
+
+//a_Refl[4] = inputsVector[3] - ((2.0 * DotProduct[0]) * inputsVector[7])
+setVector ve11 = {inputsVector[3],-2.0};
+setVector ve12 = {1.0,DotProduct[0]};
+setVector ve13 = {1.0,inputsVector[7]};
+dotVectors a_Refl[4] = <ve11,ve12,ve13>;
+
+//a_Refl[5] = 1.0
+assignMv a_Refl[5] = [1.0];

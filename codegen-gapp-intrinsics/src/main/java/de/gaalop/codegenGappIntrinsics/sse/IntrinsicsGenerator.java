@@ -1,9 +1,9 @@
-package de.gaalop.codegenGappIntrinsics;
+package de.gaalop.codegenGappIntrinsics.sse;
 
 import de.gaalop.CodeGenerator;
 import de.gaalop.OutputFile;
 import de.gaalop.cfg.ControlFlowGraph;
-import de.gaalop.gapp.visitor.PrettyPrint;
+
 import java.nio.charset.Charset;
 import java.util.Collections;
 import java.util.Set;
@@ -13,7 +13,7 @@ import java.util.Set;
  * which lists all GAPP members in a graph in a pretty-printed format
  * @author Christian Steinmetz
  */
-public class GAPPCodeGenerator implements CodeGenerator {
+public class IntrinsicsGenerator implements CodeGenerator {
 
     @Override
     public Set<OutputFile> generate(ControlFlowGraph in) {
@@ -45,7 +45,7 @@ public class GAPPCodeGenerator implements CodeGenerator {
      * @return The genereated code
      */
     private String generateCode(ControlFlowGraph in) {
-        GAPPIntrinsicsVisitor a = new GAPPIntrinsicsVisitor();
+        IntrinsicsVisitor a = new IntrinsicsVisitor();
         in.accept(a);
         return  a.getResultString();
 
