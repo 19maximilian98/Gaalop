@@ -253,8 +253,11 @@ public class GAPPIntrinsicsVisitor extends de.gaalop.gapp.visitor.CFGGAPPVisitor
         result.append(nextLine);
         result.append("size_t " + preVL + ";");
         result.append(nextLine);
-        result.append("vfloat64m1_t " + preVector +"0, " + preVector + "1, "+ preVector + "r;");
+        result.append("vfloat64m1_t " + preVector +"0, " + preVector + "1;");
         result.append(nextLine);
+        result.append("vfloat64m1_t " + preVector +"r = vle64_v_f64m1(zero, 1);");
+        result.append(nextLine);
+
 
 
         result.append("for (; " + preN + " > 0; " + preN + " -= " + preVL + ") {");
@@ -273,7 +276,7 @@ public class GAPPIntrinsicsVisitor extends de.gaalop.gapp.visitor.CFGGAPPVisitor
             result.append(preVector + "0 = vfmul_vv_f64m1(" + preVector + "0, " + preVector + "1, l);");
             result.append(nextNextLine);
         }
-        result.append(preVector + preDotProd + " = vfredosum_vs_f64m1_f64m1 (" + preVector + preDotProd + ", " + preVector + "0, " + preVector + preZero + ", l);");
+        result.append(preVector + preDotProd + " = vfredosum_vs_f64m1_f64m1 (" + preVector + preDotProd + ", " + preVector + "0, " + preVector + "r" + ", l);");
         result.append(nextNextLine);
 
         result.append("}");

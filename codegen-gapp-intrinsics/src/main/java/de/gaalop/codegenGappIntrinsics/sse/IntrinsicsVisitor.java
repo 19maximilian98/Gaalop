@@ -22,6 +22,8 @@ public class IntrinsicsVisitor extends de.gaalop.gapp.visitor.CFGGAPPVisitor {
 
     private Map<String, Integer> vectorsSizeMap;
 
+    private List<Variable> inputVariables;
+
     // Müll
     String nextLine = "\n  ";
     String prePointer = "p";
@@ -72,7 +74,7 @@ public class IntrinsicsVisitor extends de.gaalop.gapp.visitor.CFGGAPPVisitor {
         List<Variable> localVariables = sortVariables(node.getGraph().getLocalVariables());
         int bladeCount = node.getGraph().getAlgebraDefinitionFile().getBladeCount();
        // result.append("const double *inputsVector, ");
-        List<Variable> inputVariables = sortVariables(node.getGraph().getInputVariables());
+        inputVariables = sortVariables(node.getGraph().getInputVariables());
         for (Variable cur : inputVariables){
             result.append("float ");
             result.append(cur.getName());
@@ -373,15 +375,21 @@ public class IntrinsicsVisitor extends de.gaalop.gapp.visitor.CFGGAPPVisitor {
                 Selectorset selectorset = pair.getSelectors();
 
                 for (Selector selector : selectorset){
-                    String element = "";
-                    if (selector.getSign() == (byte) -1) {
-                        element += "-";
+                    if (name.equals("inputsVector")){
+                        elements.add(inputVariables.get(selector.getIndex()).getName());
                     }
-                    element+=name;
-                    element+="[";
-                    element+=selector.getIndex();
-                    element+="]";
-                    elements.add(element);
+                    else {
+                        String element = "";
+
+                        if (selector.getSign() == (byte) -1) {
+                            element += "-";
+                        }
+                        element += name;
+                        element += "[";
+                        element += selector.getIndex();
+                        element += "]";
+                        elements.add(element);
+                    }
                 }
             }
             //localResult.append(",");

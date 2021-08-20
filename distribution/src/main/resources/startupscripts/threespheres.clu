@@ -11,8 +11,8 @@ S3=x3-0.5*(d34*d34)*einf;
 
 // The PointPair in the intersection;
 
-?PP4=S1^S2^S3;
-?DualPP4=*PP4;
+PP4=S1^S2^S3;
+!DualPP4=*PP4;
 
 // Extraction of the two points;
 
