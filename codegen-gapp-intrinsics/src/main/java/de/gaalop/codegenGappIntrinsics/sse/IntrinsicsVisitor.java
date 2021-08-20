@@ -376,7 +376,10 @@ public class IntrinsicsVisitor extends de.gaalop.gapp.visitor.CFGGAPPVisitor {
 
                 for (Selector selector : selectorset){
                     if (name.equals("inputsVector")){
-                        elements.add(inputVariables.get(selector.getIndex()).getName());
+                        if (selector.getSign() == (byte) -1) {
+                            elements.add("-" + inputVariables.get(selector.getIndex()).getName());
+                        }
+                        else elements.add(inputVariables.get(selector.getIndex()).getName());
                     }
                     else {
                         String element = "";
