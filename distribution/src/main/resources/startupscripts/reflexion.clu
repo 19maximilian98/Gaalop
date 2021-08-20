@@ -1,5 +1,5 @@
 a = a1*e1 + a2*e2 + a3*e3 + a4*einf + e0;
 m = m1*e1 + m2*e2 + m3*e3 + m4*einf;
-DotProduct = a.m;
+!DotProduct = a.m;
 a_par = 2*(DotProduct)*m;
 ?a_Refl = a - a_par;

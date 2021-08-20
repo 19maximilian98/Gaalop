@@ -25,7 +25,15 @@ public class UseAlgebra {
     private IMultTable tableGeo;
 
     public UseAlgebra(AlgebraDefinitionFile alFile) {
-        if (alFile.isUsePrecalculatedTable()) {
+        // Does precomputed products file exist?
+        boolean productTableExist = (alFile.isUseAsRessource())
+                ? (AlStrategy.class.getResource(alFile.getProductsFilePath()) != null)
+                : new File(alFile.getProductsFilePath()).exists();
+        
+        if (alFile.isUsePrecalculatedTable() && !productTableExist)
+            System.err.println("Warning: Precomputed products.csv not found. Switching to direct computing of products!");
+        
+        if (alFile.isUsePrecalculatedTable() && productTableExist) {
             algebra = new Algebra(alFile);
             tableInner = new MultTableImpl();
             tableOuter = new MultTableImpl();
@@ -125,19 +133,19 @@ public class UseAlgebra {
     }
 
     /**
-     * Returns the useAlgebra which represents the calculations in 5d conformal geometric algebra
+     * Returns the useAlgebra which represents the calculations in conformal geometric algebra
      * @return The useAlgebra instance
      */
-    public static UseAlgebra get5dConformalGATable() {
-        return loadInternalAlgebra(5, true);
+    public static UseAlgebra getCGATable() {
+        return loadInternalAlgebra("cga", true);
     }
 
     /**
-     * Returns the useAlgebra which represents the calculations in 5d conformal geometric algebra
+     * Returns the useAlgebra which represents the calculations in conformal geometric algebra
      * @return The useAlgebra instance
      */
-    public static UseAlgebra get5dConformalGALive() {
-        return loadInternalAlgebra(5, false);
+    public static UseAlgebra getCGALive() {
+        return loadInternalAlgebra("cga", false);
     }
 
     /**
@@ -145,19 +153,19 @@ public class UseAlgebra {
      * @return The useAlgebra instance
      */
     public static UseAlgebra get3dGA() {
-        return loadInternalAlgebra(3, false);
+        return loadInternalAlgebra("3d", false);
     }
 
     /**
      * Loads an internal algebra with a given dimension
-     * @param dimension The dimension
+     * @param name The name of the geometric algebra
      * @param useTable Should the tables be used?
      * @return The usealgebra
      */
-    private static UseAlgebra loadInternalAlgebra(int dimension, boolean useTable) {
+    private static UseAlgebra loadInternalAlgebra(String name, boolean useTable) {
         try {
             AlgebraDefinitionFile alFile = new AlgebraDefinitionFile();
-            String baseDirPath = "algebra/"+dimension+"d/";
+            String baseDirPath = "algebra/"+name+"/";
             alFile.loadFromFile(AlStrategy.class.getResourceAsStream(baseDirPath+"definition.csv"));
             alFile.setProductsFilePath(baseDirPath+"products.csv");
             alFile.setUseAsRessource(true);
