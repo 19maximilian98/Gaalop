@@ -1,4 +1,4 @@
-package de.gaalop.codegenGappIntrinsics.sse;
+package de.gaalop.codegenGappIntrinsics.sse3;
 
 import java.util.ArrayList;
 import java.util.List;

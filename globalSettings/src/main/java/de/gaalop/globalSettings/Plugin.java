@@ -19,7 +19,7 @@ public class Plugin extends Observable implements GlobalSettingsStrategyPlugin {
      * Some tests fail otherwise.
      */
     @ConfigurationProperty(type=Type.BOOLEAN)
-    public boolean optMaxima = true;
+    public boolean optMaxima = false;
     
     @ConfigurationProperty(type=Type.NUMBER)
     public int editorFontSize = 12;
