@@ -4,8 +4,7 @@ import de.gaalop.CodeGenerator;
 import de.gaalop.CodeGeneratorPlugin;
 
 import de.gaalop.ConfigurationProperty;
-import de.gaalop.codegenGappIntrinsics.riscvv.GAPPCodeGenerator;
-import de.gaalop.codegenGappIntrinsics.sse.IntrinsicsGenerator;
+
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
@@ -42,9 +41,7 @@ public class Plugin implements CodeGeneratorPlugin {
 
     @Override
     public CodeGenerator createCodeGenerator() {
-        if (intrinsicType.equals("sse3"))
-            return new IntrinsicsGenerator();
-        return new GAPPCodeGenerator();
+        return new IntrinsicsCodeGenerator(this);
     }
 
     @Override
@@ -52,11 +49,21 @@ public class Plugin implements CodeGeneratorPlugin {
 
     @Override
     public String getDescription() {
-        return "This plugin generates GAPP Code";
+        return "This plugin generates C++ Intrinsics Code.";
     }
 
     @Override
     public Image getIcon() {
         return icon;
     }
+
+    public String getIntrinsicType() {
+        return intrinsicType;
+    }
+
+    public void setIntrinsicType(String intrinsicType) {
+        this.intrinsicType = intrinsicType;
+    }
+    
+    
 }

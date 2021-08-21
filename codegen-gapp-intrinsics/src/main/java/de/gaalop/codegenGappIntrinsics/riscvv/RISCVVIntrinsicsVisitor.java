@@ -1,17 +1,17 @@
 package de.gaalop.codegenGappIntrinsics.riscvv;
 
-import de.gaalop.cfg.AssignmentNode;
+import de.gaalop.StringList;
 import de.gaalop.cfg.EndNode;
 import de.gaalop.cfg.StartNode;
-import de.gaalop.dfg.Variable;
 import de.gaalop.gapp.*;
 import de.gaalop.gapp.instructionSet.*;
 import de.gaalop.gapp.variables.GAPPValueHolder;
 import de.gaalop.gapp.variables.GAPPVector;
+import de.gaalop.gapp.visitor.PrettyPrint;
 
 import java.util.*;
 
-public class GAPPIntrinsicsVisitor extends de.gaalop.gapp.visitor.CFGGAPPVisitor {
+public class RISCVVIntrinsicsVisitor extends de.gaalop.gapp.visitor.CFGGAPPVisitor {
 
 
 
@@ -30,7 +30,7 @@ public class GAPPIntrinsicsVisitor extends de.gaalop.gapp.visitor.CFGGAPPVisitor
     String preZero = "Zero";
     String nextNextLine = "\n    ";
 
-    public GAPPIntrinsicsVisitor(){
+    public RISCVVIntrinsicsVisitor(){
         result = new StringBuilder();
         variables = new StringBuilder();
         vectorsSizeMap = new HashMap<>();
@@ -41,23 +41,6 @@ public class GAPPIntrinsicsVisitor extends de.gaalop.gapp.visitor.CFGGAPPVisitor
     }
 
     @Override
-    public void visit(AssignmentNode node) {
-       /* result.append("//");
-        result.append(node.getVariable().toString());
-        result.append(" = ");
-        result.append(node.getValue().toString());
-        result.append('\n');*/
-
-
-
-        if (node.getGAPP() != null) {
-            node.getGAPP().accept(this, null);
-        }
-        node.getSuccessor().accept(this);
-
-    }
-
-    @Override
     public void visit(StartNode node){
 
         result.append("#include <riscv_vector.h>\n" +
@@ -65,126 +48,51 @@ public class GAPPIntrinsicsVisitor extends de.gaalop.gapp.visitor.CFGGAPPVisitor
                 "#include <stdio.h>\n" +
                 "#include <math.h>\n\n");
 
-        result.append("void calculate(");
-        List<Variable> localVariables = sortVariables(node.getGraph().getLocalVariables());
+        result.append("void " + node.getGraph().getSource().getName().split("\\.")[0] + "(");
+        
         int bladeCount = node.getGraph().getAlgebraDefinitionFile().getBladeCount();
        // result.append("const double *inputsVector, ");
-        List<Variable> inputVariables = sortVariables(node.getGraph().getInputVariables());
-        for (Variable cur : inputVariables){
-            result.append("double ");
-            result.append(cur.getName());
-            result.append(", ");
-        }
-        for (Variable var : localVariables) {
-            result.append("double").append(" ");
-            result.append(var.getName());
-            result.append("["+bladeCount+"], ");
-        }
-
-        if (node.getGraph().getLocalVariables().size() > 0) {
-            result.setLength(result.length() - 2);
-        }
+       
+        StringList inputs = node.getGraph().getInputs();
+        StringList outputs = node.getGraph().getOutputs();
+        
+        StringList parameters = new StringList();
+        for (String cur: inputs)
+            parameters.add("double "+cur);
+        
+        for (String cur: outputs)
+            parameters.add("double "+cur+"["+bladeCount+"]");
+        
+        result.append(parameters.join());
 
         result.append(") {\n");
-        result.append("double inputsVector[" + inputVariables.size() + "] = {");
-        for (Variable cur : inputVariables) {
-            result.append(cur.getName());
-            result.append(",  ");
+        
+        // Declare locals, which are no outputs
+        for (String var : node.getGraph().getLocals()) {
+            if (!outputs.contains(var)) {
+                result.append("double "+var+"[" + bladeCount + "] = { 0 };\n");
+            }
         }
-        result.deleteCharAt(result.length() - 1);
-        result.deleteCharAt(result.length() - 1);
-        result.append("};\n");
+               
         result.append(
                 "double zero[1] = {0};\n" +
                 "vfloat64m1_t vZero = vle64_v_f64m1(zero, 1);\n");
         node.getSuccessor().accept(this);
     }
 
-    /**
-     * Sorts a set of variables by name to make the order deterministic.
-     *
-     * @param inputVariables
-     * @return
-     */
-    protected List<Variable> sortVariables(Set<Variable> inputVariables) {
-        List<Variable> variables = new ArrayList<Variable>(inputVariables);
-        Comparator<Variable> comparator = new Comparator<Variable>() {
-
-            @Override
-            public int compare(Variable o1, Variable o2) {
-                return o1.getName().compareToIgnoreCase(o2.getName());
-            }
-        };
-
-        Collections.sort(variables, comparator);
-        return variables;
-    }
-
-
     @Override
     public void visit(EndNode node) {
         result.append("}");
-        result.append("\n\nint main() {\n" +
-                "\n" +
-                "  \n" +
-                "double x4a[32] = {0};" +
-                "double DualPP4[32] = {0};" +
-                "double a1 = 0; double a2 = 0;double a3=0;\n" +
-                "double b1=0; double b2=0.4;double b3=0;\n" +
-                "double c1=0;double c2=0.45;double c3=0.2;\n" +
-                "double d14=0.5;double d24=0.4;double d34=0.3;" +
-                "calculate(a1, a2, a3, b1, b2, b3, c1, c2, c3, d14, d24, d34, DualPP4, x4a);" +
-                "  printf(\"x4a: %f\\n\", x4a[0]);\n" +
-               /* "  double inputsVector[8] = {0.5, 0.5, 0.5, 0.4, 1.0, 0.0, 0.0, 0.0};\n" +
-                "  double a_Refl[32];\n" +
-                "  double DotProduct[32] = {0};\n" +
-                "  \n" +
-                "double a1 = 0.5;\n" +
-                "  double a2 = 0.5;\n" +
-                "  double a3 = 0.5;\n" +
-                "  double a4 = 0.4;\n" +
-                "  double m1 = 0;\n" +
-                "  double m2 = 0;\n" +
-                "  double m3 = 0;\n" +
-                "  double m4 = 0;" +
-                "  \n" +
-                "  calculate(a1, a2, a3, a4, m1, m2, m3, m4,a_Refl, DotProduct);\n" +
-                "  printf(\"DotProduct: %f\\n\", DotProduct[0]);\n" +
-                "  printf(\"a_Refl: %f, %f, %f, %f, %f, %f\\n\", a_Refl[0], a_Refl[1], a_Refl[2], a_Refl[3], a_Refl[4], a_Refl[5]);" +
-                */
-                "return 0;" +
-                "}");
     }
-
-
-
 
     @Override
     public Object visitAssignMv(GAPPAssignMv gappAssignMv, Object arg) {
-        result.append("//assignMv ");
-        result.append(gappAssignMv.getDestination().getName());
-        //printMultivector(gappAssignMv.getDestination());
-        result.append("[");
+        PrettyPrint printer = new PrettyPrint();
+        gappAssignMv.accept(printer, null);
+        result.append("//"+printer.getResultString());
+        
         PosSelectorset selectors = gappAssignMv.getSelectors();
-        for (PosSelector cur : selectors){
-            result.append(cur.getIndex());
-            result.append(";");
-        }
-        result.deleteCharAt(result.length() - 1);
-        result.append("]");
-        // printPosSelectors(gappAssignMv.getSelectors());
-        result.append(" = ");
         Valueset valueset = gappAssignMv.getValues();
-        result.append("[");
-        for (GAPPValueHolder cur : valueset) {
-            result.append(cur.prettyPrint());
-            result.append(",");
-        }
-        result.deleteCharAt(result.length() - 1);
-        result.append("]");
-        //printValueSet(gappAssignMv.getValues());
-        result.append(";\n");
-
         for (int i = 0; i< selectors.size();i++){
             result.append(gappAssignMv.getDestination().getName());
             result.append("[");
@@ -199,31 +107,11 @@ public class GAPPIntrinsicsVisitor extends de.gaalop.gapp.visitor.CFGGAPPVisitor
 
     @Override
     public Object visitDotVectors(GAPPDotVectors gappDotVectors, Object arg) {
-        result.append("//dotVectors ");
-        result.append(gappDotVectors.getDestination().getName());
-        // printMultivector(gappDotVectors.getDestination());
-        result.append("[");
-        result.append(gappDotVectors.getDestSelector().getIndex());
-        // printSelector(gappDotVectors.getDestSelector());
-        result.append("]");
-        result.append(" = ");
-        result.append("<");
-
+        PrettyPrint printer = new PrettyPrint();
+        gappDotVectors.accept(printer, null);
+        result.append("//"+printer.getResultString());
+        
         LinkedList<GAPPVector> vectors = gappDotVectors.getParts();
-        ListIterator<GAPPVector> it = vectors.listIterator();
-        while (it.hasNext()) {
-            result.append(it.next().getName());
-           // printVector(it.next());
-            if (it.hasNext()) {
-                result.append(",");
-            }
-        }
-
-        result.append(">");
-        //printDotProduct(gappDotVectors.getParts());
-        result.append(";\n");
-
-
 
         result.append("{");
         result.append(nextLine);
@@ -297,11 +185,9 @@ public class GAPPIntrinsicsVisitor extends de.gaalop.gapp.visitor.CFGGAPPVisitor
 
     @Override
     public Object visitResetMv(GAPPResetMv gappResetMv, Object arg) {
-        result.append("//resetMv ");
-        result.append(gappResetMv.getDestination().getName());
-        result.append("[");
-        result.append(gappResetMv.getSize());
-        result.append("];\n");
+        PrettyPrint printer = new PrettyPrint();
+        gappResetMv.accept(printer, null);
+        result.append("//"+printer.getResultString());
 
        if (gappResetMv.getDestination().getName().contains("tempmv")){
            result.append("double " + gappResetMv.getDestination().getName() + "[" + gappResetMv.getSize() + "];\n");
@@ -337,7 +223,9 @@ public class GAPPIntrinsicsVisitor extends de.gaalop.gapp.visitor.CFGGAPPVisitor
 
     @Override
     public Object visitSetMv(GAPPSetMv gappSetMv, Object arg) {
-
+        PrettyPrint printer = new PrettyPrint();
+        gappSetMv.accept(printer, null);
+        result.append("//"+printer.getResultString());
 
         PosSelectorset selectors = gappSetMv.getSelectorsDest();
         for (int i = 0; i< selectors.size();i++){
@@ -357,75 +245,45 @@ public class GAPPIntrinsicsVisitor extends de.gaalop.gapp.visitor.CFGGAPPVisitor
 
     @Override
     public Object visitSetVector(GAPPSetVector gappSetVector, Object arg) {
-        result.append("//setVector ");
-        result.append(gappSetVector.getDestination().getName());
-        //printVector(gappSetVector.getDestination());
-        result.append(" = ");
-
-
-        LinkedList<SetVectorArgument> list = gappSetVector.getEntries();
-        result.append("{");
-        for (SetVectorArgument cur : list) {
-            if (cur.isConstant())
-                result.append(((ConstantSetVectorArgument) cur).getValue());
-            else {
-                PairSetOfVariablesAndIndices pair = (PairSetOfVariablesAndIndices) cur;
-                result.append(pair.getSetOfVariable().prettyPrint());
-                result.append("[");
-                Selectorset selectorset = pair.getSelectors();
-                for (Selector cur2 : selectorset) {
-                    if (cur2.getSign() == (byte) -1) {
-                        result.append('-');
-                    }
-                    result.append(cur2.getIndex());
-                    result.append(",");
-                }
-                result.deleteCharAt(result.length() - 1);
-                result.append("]");
-               // printSelectors(pair.getSelectors());
-            }
-            result.append(",");
-        }
-        result.deleteCharAt(result.length() - 1);
-        result.append("}");
-        //printListOfArguments(gappSetVector.getEntries());
-
-
-        result.append(";\n");
+        PrettyPrint printer = new PrettyPrint();
+        gappSetVector.accept(printer, null);
+        result.append("//"+printer.getResultString());
 
         result.append("double ");
         result.append(gappSetVector.getDestination().getName());
-        StringBuilder localResult = new StringBuilder();
+        
         Integer vectorSize = 0;
-
+        
+        StringList localList = new StringList();
         for (SetVectorArgument cur : gappSetVector.getEntries()){
             if (cur.isConstant()) {
-                localResult.append(((ConstantSetVectorArgument) cur).getValue());
+                localList.add(""+((ConstantSetVectorArgument) cur).getValue());
                 vectorSize++;
-                localResult.append(",");
             } else {
                 PairSetOfVariablesAndIndices pair = (PairSetOfVariablesAndIndices) cur;
                 String name = pair.getSetOfVariable().getName();
                 Selectorset selectorset = pair.getSelectors();
                 for (Selector selector : selectorset){
                     vectorSize++;
+                    StringBuilder localResult = new StringBuilder();
                     if (selector.getSign() == (byte) -1) {
                         localResult.append('-');
                     }
                     localResult.append(name);
                     localResult.append("[");
                     localResult.append(selector.getIndex());
-                    localResult.append("],");
+                    localResult.append("]");
+                    localList.add(localResult.toString());
                 }
             }
             //localResult.append(",");
         }
-        localResult.deleteCharAt(localResult.length() - 1);
+
         vectorsSizeMap.put(gappSetVector.getDestination().getName(), vectorSize);
         result.append("[");
         result.append(vectorSize);
         result.append("] = {");
-        result.append(localResult);
+        result.append(localList.join());
         result.append("}");
         result.append(";\n");
 
@@ -439,11 +297,19 @@ public class GAPPIntrinsicsVisitor extends de.gaalop.gapp.visitor.CFGGAPPVisitor
 
     @Override
     public Object visitCalculateMv(GAPPCalculateMv gappCalculateMv, Object arg) {
+        PrettyPrint printer = new PrettyPrint();
+        gappCalculateMv.accept(printer, null);
+        result.append("//"+printer.getResultString());
+        
         return null;
     }
 
     @Override
     public Object visitCalculateMvCoeff(GAPPCalculateMvCoeff gappCalculateMvCoeff, Object arg) {
+        PrettyPrint printer = new PrettyPrint();
+        gappCalculateMvCoeff.accept(printer, null);
+        result.append("//"+printer.getResultString());
+        
         result.append("");
      //   result.append("{\n").append("double " + preVector + " = " + gappCalculateMvCoeff.getOperand1().getName() + "[0];\n");
         result.append(gappCalculateMvCoeff.getDestination().getName());
@@ -463,8 +329,7 @@ public class GAPPIntrinsicsVisitor extends de.gaalop.gapp.visitor.CFGGAPPVisitor
                 result.append(")");
                 break;
             case INVERT:
-                result.append("-" +  gappCalculateMvCoeff.getOperand1().getName() + "[0]");
-                break;
+                throw new IllegalArgumentException("Invert not allowed in calculateMvCoeff!");
             case ABS:
                 result.append("abs(" +  gappCalculateMvCoeff.getOperand1().getName() + "[0]");
                 result.append(")");
@@ -524,19 +389,18 @@ public class GAPPIntrinsicsVisitor extends de.gaalop.gapp.visitor.CFGGAPPVisitor
 
     @Override
     public Object visitAssignInputsVector(GAPPAssignInputsVector gAPPAssignInputsVector, Object arg) {
-        result.append("//assignInputsVector inputsVector = ");
-        Variableset variableset = gAPPAssignInputsVector.getValues();
-        result.append("[");
-        for (GAPPValueHolder cur : variableset) {
-            result.append(cur.prettyPrint());
-            result.append(",");
-        }
-        result.deleteCharAt(result.length() - 1);
-        result.append("]");
-        // printVariableSet(gappAssignInputsVector.getValues());
-        result.append(";\n");
-
-
+        PrettyPrint printer = new PrettyPrint();
+        gAPPAssignInputsVector.accept(printer, null);
+        result.append("//"+printer.getResultString());
+        
+        StringList localList = new StringList();
+        for (GAPPValueHolder holder: gAPPAssignInputsVector.getValues()) 
+            localList.add(holder.prettyPrint());
+                
+        result.append("double inputsVector[" + gAPPAssignInputsVector.getValues().size() + "] = { ");
+        result.append(localList.join());
+        result.append(" };\n");
+        
         return null;
     }
 
