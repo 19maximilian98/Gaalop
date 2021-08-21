@@ -48,7 +48,7 @@ public class RISCVVIntrinsicsVisitor extends de.gaalop.gapp.visitor.CFGGAPPVisit
                 "#include <stdio.h>\n" +
                 "#include <math.h>\n\n");
 
-        result.append("void calculate(");   // TODO (csteinmetz15) use script filename here, e.g. result.append("void " + graph.getSource().getName().split("\\.")[0] + "(");
+        result.append("void " + node.getGraph().getSource().getName().split("\\.")[0] + "(");
         
         int bladeCount = node.getGraph().getAlgebraDefinitionFile().getBladeCount();
        // result.append("const double *inputsVector, ");
@@ -329,8 +329,7 @@ public class RISCVVIntrinsicsVisitor extends de.gaalop.gapp.visitor.CFGGAPPVisit
                 result.append(")");
                 break;
             case INVERT:
-                result.append("-" +  gappCalculateMvCoeff.getOperand1().getName() + "[0]");
-                break;
+                throw new IllegalArgumentException("Invert not allowed in calculateMvCoeff!");
             case ABS:
                 result.append("abs(" +  gappCalculateMvCoeff.getOperand1().getName() + "[0]");
                 result.append(")");

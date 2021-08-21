@@ -52,7 +52,7 @@ public class SSE3IntrinsicsVisitor extends de.gaalop.gapp.visitor.CFGGAPPVisitor
                 "#include <stdio.h>\n" +
                 "#include <math.h>\n\n");
 
-        result.append("void calculate("); // TODO (csteinmetz15) use script filename here, e.g. result.append("void " + graph.getSource().getName().split("\\.")[0] + "(");
+        result.append("void " + node.getGraph().getSource().getName().split("\\.")[0] + "(");
         
         int bladeCount = node.getGraph().getAlgebraDefinitionFile().getBladeCount();
        // result.append("const double *inputsVector, ");
@@ -224,37 +224,6 @@ public class SSE3IntrinsicsVisitor extends de.gaalop.gapp.visitor.CFGGAPPVisitor
         gappSetVector.accept(printer, null);
         result.append("//"+printer.getResultString());
 
-
-        LinkedList<SetVectorArgument> list = gappSetVector.getEntries();
-        result.append("{");
-        for (SetVectorArgument cur : list) {
-            if (cur.isConstant())
-                result.append(((ConstantSetVectorArgument) cur).getValue());
-            else {
-                PairSetOfVariablesAndIndices pair = (PairSetOfVariablesAndIndices) cur;
-                result.append(pair.getSetOfVariable().prettyPrint());
-                result.append("[");
-                Selectorset selectorset = pair.getSelectors();
-                for (Selector cur2 : selectorset) {
-                    if (cur2.getSign() == (byte) -1) {
-                        result.append('-');
-                    }
-                    result.append(cur2.getIndex());
-                    result.append(",");
-                }
-                result.deleteCharAt(result.length() - 1);
-                result.append("]");
-               // printSelectors(pair.getSelectors());
-            }
-            result.append(",");
-        }
-        result.deleteCharAt(result.length() - 1);
-        result.append("}");
-        //printListOfArguments(gappSetVector.getEntries());
-
-
-        result.append(";\n");
-
         VectorIntrinsics temp = new VectorIntrinsics(gappSetVector.getDestination().getName());
         vectors.add(temp);
         ArrayList<String> elements = temp.getElements();
@@ -268,7 +237,7 @@ public class SSE3IntrinsicsVisitor extends de.gaalop.gapp.visitor.CFGGAPPVisitor
 
                 for (Selector selector : selectorset){
                     if (name.equals("inputsVector")){
-                        elements.add(((selector.getSign() == (byte) -1) ? "-" : "") + inputsVectorVariableSet.get(selector.getIndex()));
+                        elements.add(((selector.getSign() == (byte) -1) ? "-" : "") + inputsVectorVariableSet.get(selector.getIndex()).prettyPrint());
                     }
                     else {
                         String element = "";
@@ -322,8 +291,7 @@ public class SSE3IntrinsicsVisitor extends de.gaalop.gapp.visitor.CFGGAPPVisitor
                 result.append(")");
                 break;
             case INVERT:
-                result.append("-" +  gappCalculateMvCoeff.getOperand1().getName() + "[0]");
-                break;
+                throw new IllegalArgumentException("Invert not allowed in calculateMvCoeff!");
             case ABS:
                 result.append("abs(" +  gappCalculateMvCoeff.getOperand1().getName() + "[0]");
                 result.append(")");
