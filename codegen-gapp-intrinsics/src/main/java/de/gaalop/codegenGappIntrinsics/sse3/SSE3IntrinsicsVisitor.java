@@ -190,7 +190,7 @@ public class SSE3IntrinsicsVisitor extends de.gaalop.gapp.visitor.CFGGAPPVisitor
 
 
        if (gappResetMv.getDestination().getName().contains("tempmv")){
-           result.append("double " + gappResetMv.getDestination().getName() + "[" + gappResetMv.getSize() + "];\n");
+           result.append("float " + gappResetMv.getDestination().getName() + "[" + gappResetMv.getSize() + "];\n");
        }
 
         return null;
@@ -209,6 +209,9 @@ public class SSE3IntrinsicsVisitor extends de.gaalop.gapp.visitor.CFGGAPPVisitor
             result.append(selectors.get(i).getIndex());
             result.append("]");
             result.append(" = ");
+            if (gappSetMv.getSelectorsSrc().get(i).getSign()== (byte) -1){
+                result.append("-");
+            }
             result.append(gappSetMv.getSource().getName());
             result.append("[");
             result.append(gappSetMv.getSelectorsSrc().get(i).getIndex());
