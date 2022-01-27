@@ -39,8 +39,6 @@ public class GAPPDecoratingMain {
     /**
      * Decorates a given ControlFlowGraph with GAPP instructions
      * @param graph The ControlFlowGraph
-     * @param optMaxima Should Maxima be used?
-     * @param maximaCommand The maxima command
      * @return The same graph object (which is now decorated with GAPP instructions)
      * @throws OptimizationException
      */
@@ -64,7 +62,7 @@ public class GAPPDecoratingMain {
         plugin.setInvertTransformation(true);
         plugin.setScalarFunctions(scalarFunctions);
         plugin.setOptInserting(graph.globalSettings.isOptMaxima());
-        plugin.setMaximaExpand(graph.globalSettings.isOptMaxima());
+        plugin.setMaximaExpand(this.plugin.isMaximaExpand());
         
         CFGImporterFacade facade = new CFGImporterFacade(plugin);
         facade.importGraph(graph);

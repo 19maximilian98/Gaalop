@@ -5,7 +5,6 @@ import de.gaalop.ConfigurationProperty.Type;
 import de.gaalop.Notifications;
 import de.gaalop.OptimizationStrategy;
 import de.gaalop.OptimizationStrategyPlugin;
-import de.gaalop.tba.cfgImport.optimization.maxima.ProcessBuilderMaximaConnection;
 import java.awt.Image;
 import java.util.Observable;
 
@@ -18,6 +17,16 @@ public class Plugin extends Observable implements OptimizationStrategyPlugin {
     @ConfigurationProperty(type = Type.BOOLEAN)
     public boolean useScalarFunctions = true;
     
+    @ConfigurationProperty(type = Type.BOOLEAN)
+    public boolean maximaExpand = false;
+
+    public boolean isMaximaExpand() {
+        return maximaExpand;
+    }
+
+    public void setMaximaExpand(boolean maximaExpand) {
+        this.maximaExpand = maximaExpand;
+    }
 
     public boolean isUseScalarFunctions() {
         return useScalarFunctions;
